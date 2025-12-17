@@ -1,0 +1,37 @@
+{
+    "window_title": "BrownDust II",
+    "rois": {
+        "minigame": [975, 1218, 716, 84]
+    },
+    "colors": {
+        "yellow_lower": [20, 100, 180],
+        "yellow_upper": [40, 255, 255],
+        "cursor_lower": [0, 0, 200],
+        "cursor_upper": [180, 50, 255]
+    },
+    "game_params": {
+        "cast_duration": 0.5,
+        "hit_cooldown": 0.2,
+        "cursor_timeout": 1.0,
+        "confidence_common": 0.8,
+        "confidence_text": 0.7
+    },
+    "humanization": {
+        "enable_random_delay": true,
+        "click_offset_pixels": 5,
+        "reaction_delay_min": 0.05,
+        "reaction_delay_max": 0.15,
+        "cast_variance": 0.1
+    },
+    "images": {
+        "cast": "cast_icon.png",
+        "bite": "bite_icon.png",
+        "result": "result_screen.png",
+        "full_warning": "text_inventory_full.png",
+        "btn_sell_mode": "btn_one_click_sell.png",
+        "btn_select_all": "btn_select_all.png",
+        "btn_check": "btn_check_blue.png",
+        "btn_confirm": "btn_confirm_sell.png",
+        "pos_error": "text_position_error.png"
+    }
+}

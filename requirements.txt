@@ -1,0 +1,9 @@
+opencv-python
+numpy
+pyautogui
+pydirectinput
+pywin32
+keyboard
+mss
+pillow
+PyQt6
