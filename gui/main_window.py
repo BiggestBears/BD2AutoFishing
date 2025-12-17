@@ -24,11 +24,14 @@ class MainWindow(QMainWindow):
 
         # 2. 构建界面
         self.init_ui()
-        
+
         # 3. 连接信号
         self.connect_signals()
 
         # 4. 加载初始日志
+        self.append_log("本脚本为免费脚本。")
+        self.append_log("项目地址：https://github.com/BiggestBears/BD2AutoFishing")
+        self.append_log("----")
         self.append_log("系统就绪。请确认游戏窗口已打开，并配置好 ROI 区域。")
 
     def init_ui(self):
