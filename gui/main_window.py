@@ -29,8 +29,7 @@ class MainWindow(QMainWindow):
         self.connect_signals()
 
         # 4. 加载初始日志
-        self.append_log("本脚本为免费脚本。")
-        self.append_log("项目地址：https://github.com/BiggestBears/BD2AutoFishing")
+        self.append_log("本软件完全免费！\n开源地址：https://github.com/BiggestBears/BD2AutoFishing\n如果你是付费购买的，请立即退款并举报商家。")
         self.append_log("----")
         self.append_log("系统就绪。请确认游戏窗口已打开，并配置好 ROI 区域。")
 
