@@ -3,6 +3,10 @@
 
 《棕色尘埃2》(BrownDust II) 自动化钓鱼脚本。
 
+<img width="645" height="556" alt="image" src="https://github.com/user-attachments/assets/a38b3fff-6a05-4757-8e56-8355e2cc08ef" />
+
+<img width="645" height="556" alt="image" src="https://github.com/user-attachments/assets/ee839f35-5dae-43c9-9e8b-f7536354677c" />
+
 ## ✨ 核心特性
 
 *   **自动钓鱼**：自动抛竿、收竿、QTE小游戏。
@@ -76,6 +80,7 @@
 
 ---
 *免责声明：本软件仅供技术交流与学习使用，请勿用于商业用途。使用自动化脚本可能违反游戏服务条款，使用者需自行承担相关风险。*
+
 
 
 
