@@ -33,7 +33,8 @@
     *   在“参数设置”标签页，点击【🎯 设置小游戏区域】。
     *   将出现的绿色半透明框拖拽覆盖到游戏中的 **钓鱼进度条** 上。
     *   双击左键确认。
-    *   参考图：<img width="712" height="74" alt="image" src="https://github.com/user-attachments/assets/c4074baa-45a1-439a-a5eb-15441bb362dd" />
+    *   参考图：
+    *   <img width="712" height="74" alt="image" src="https://github.com/user-attachments/assets/c4074baa-45a1-439a-a5eb-15441bb362dd" />
 
 
 2.  **设置咬钩检测点**：
@@ -74,4 +75,5 @@
 
 ---
 *免责声明：本软件仅供技术交流与学习使用，请勿用于商业用途。使用自动化脚本可能违反游戏服务条款，使用者需自行承担相关风险。*
+
 
