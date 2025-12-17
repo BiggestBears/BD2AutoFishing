@@ -1,19 +1,52 @@
 {
     "window_title": "BrownDust II",
     "rois": {
-        "minigame": [975, 1218, 716, 84]
+        "minigame": [
+            985,
+            1227,
+            700,
+            69
+        ],
+        "msg_tips": [
+            865,
+            228,
+            810,
+            129
+        ],
+        "bite": [
+            1169,
+            357,
+            220,
+            172
+        ]
     },
     "colors": {
-        "yellow_lower": [20, 100, 180],
-        "yellow_upper": [40, 255, 255],
-        "cursor_lower": [0, 0, 200],
-        "cursor_upper": [180, 50, 255]
+        "yellow_lower": [
+            0,
+            40,
+            120
+        ],
+        "yellow_upper": [
+            40,
+            255,
+            255
+        ],
+        "cursor_lower": [
+            0,
+            0,
+            200
+        ],
+        "cursor_upper": [
+            180,
+            50,
+            255
+        ]
     },
     "game_params": {
-        "cast_duration": 0.5,
+        "cast_duration": 0.35,
         "hit_cooldown": 0.2,
         "cursor_timeout": 1.0,
-        "confidence_common": 0.8,
+        "confidence_common": 0.75,
         "confidence_text": 0.7
     },
     "humanization": {

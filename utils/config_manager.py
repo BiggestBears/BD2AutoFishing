@@ -63,3 +63,16 @@ class ConfigManager:
                 np.array(upper, dtype=np.uint8)
             )
         return None, None
+
+    def set_color(self, color_name, lower, upper):
+        """
+        更新颜色阈值
+        :param color_name: 'yellow' or 'cursor'
+        :param lower: list [h, s, v]
+        :param upper: list [h, s, v]
+        """
+        if 'colors' not in self.config:
+            self.config['colors'] = {}
+            
+        self.config['colors'][f"{color_name}_lower"] = lower
+        self.config['colors'][f"{color_name}_upper"] = upper

@@ -3,6 +3,8 @@ import random
 import cv2
 import numpy as np
 import pydirectinput
+import win32gui
+import win32con
 from PyQt6.QtCore import QThread, pyqtSignal
 
 from core.vision import Vision
@@ -20,7 +22,6 @@ class FishingBot(QThread):
         
         # 运行控制标志
         self.is_running = False
-        self.is_paused = False
         
         # 优化输入延迟
         # 极速模式：降低底层输入库的默认延迟
@@ -35,15 +36,30 @@ class FishingBot(QThread):
         self.is_running = False
         self.log("🛑 正在停止脚本...")
 
-    def pause(self):
-        self.is_paused = True
-        self.status_signal.emit("已暂停")
-        self.log("⏸️ 脚本暂停")
-
-    def resume(self):
-        self.is_paused = False
-        self.status_signal.emit("运行中")
-        self.log("▶️ 脚本恢复")
+    def activate_window(self):
+        """尝试激活游戏窗口"""
+        title = self.cfg.get("window_title", default="BrownDust II")
+        hwnd = win32gui.FindWindow(None, title)
+        if hwnd:
+            try:
+                # 如果最小化了，先还原
+                if win32gui.IsIconic(hwnd):
+                    win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+                
+                # 尝试置顶
+                # 注意：Windows 限制应用抢占焦点，有时需要 Alt 键辅助或多次尝试
+                try:
+                    win32gui.SetForegroundWindow(hwnd)
+                except Exception:
+                    # 如果常规置顶失败，尝试用 shell 方式
+                    pydirectinput.press('alt')
+                    win32gui.SetForegroundWindow(hwnd)
+                
+                time.sleep(0.5) # 给窗口动画一点时间
+                return True
+            except Exception as e:
+                self.log(f"❌ 窗口激活失败: {e}")
+        return False
 
     # ================= 🎭 拟人化动作 =================
 
@@ -112,7 +128,7 @@ class FishingBot(QThread):
         
         # 缓存参数，避免循环内频繁读取字典
         game_params = self.cfg.get('game_params')
-        hit_cooldown = game_params.get('hit_cooldown', 0.2)
+        hit_cooldown = game_params.get('hit_cooldown', 0.02)
         timeout = game_params.get('cursor_timeout', 1.0)
         
         y_low, y_high = self.cfg.get_color_bounds('yellow')
@@ -234,22 +250,25 @@ class FishingBot(QThread):
 
     def run(self):
         """工作线程主入口"""
-        # 在子线程内部初始化 mss，防止跨线程 GDI 上下文冲突
+        # 1. 在子线程内部初始化 mss
         self.vision.init_manager()
         
         self.is_running = True
         self.status_signal.emit("运行中")
+        
+        # 2. 强制激活游戏窗口 (解决焦点在脚本导致误触停止的问题)
+        if not self.activate_window():
+            self.log("❌ 未找到游戏窗口！请确保游戏已启动。")
+            self.status_signal.emit("启动失败")
+            self.vision.release()
+            return
+
         self.log("🚀 自动化系统已启动")
         
         waiting_for_game = False
         
-        while self.is_running:
-            # 暂停处理
-            if self.is_paused:
-                time.sleep(0.5)
-                continue
-
-            try:
+        try:
+            while self.is_running:
                 # 1. 异常检测 (结算界面、错误提示)
                 # 使用灰度匹配加快速度
                 if self.vision.find_template('result', confidence=0.7, grayscale=True):
@@ -259,7 +278,10 @@ class FishingBot(QThread):
                     waiting_for_game = False
                     continue
 
-                if self.vision.find_template('pos_error', confidence=0.7):
+                # 优先使用配置的提示信息区域
+                msg_roi = self.cfg.get('rois', 'msg_tips')
+
+                if self.vision.find_template('pos_error', region=msg_roi, confidence=0.7):
                     self.log("⚠️ 位置错误，尝试修正...")
                     self._human_press('s', 0.3) # 后退一步
                     time.sleep(1.0)
@@ -267,7 +289,7 @@ class FishingBot(QThread):
                     continue
                 
                 # 2. 背包满检测
-                if self.vision.find_template('full_warning', confidence=0.75):
+                if self.vision.find_template('full_warning', region=msg_roi, confidence=0.75):
                     if not self.handle_selling():
                         # 贩卖失败，停止脚本保护现场
                         self.log("❌ 无法清理背包，脚本停止")
@@ -316,9 +338,12 @@ class FishingBot(QThread):
                 # 没什么事发生，稍微休息，降低CPU占用
                 time.sleep(0.1)
 
-            except Exception as e:
-                self.log(f"❌ 发生未捕获异常: {e}")
-                time.sleep(1)
-
-        self.status_signal.emit("已停止")
-        self.log("🛑 脚本已结束")
+        except Exception as e:
+            self.log(f"❌ 发生未捕获异常: {e}")
+            time.sleep(1)
+        finally:
+            # 关键：无论如何退出（包括报错），都释放 mss 资源
+            # 防止下次启动时出现 '_thread._local' object has no attribute 'srcdc'
+            self.vision.release()
+            self.status_signal.emit("已停止")
+            self.log("🛑 脚本已结束 (资源已释放)")

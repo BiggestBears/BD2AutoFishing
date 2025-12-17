@@ -46,6 +46,12 @@ class Vision:
         if self.sct is None:
             self.sct = mss.mss()
 
+    def release(self):
+        """释放 mss 资源"""
+        if self.sct:
+            self.sct.close()
+            self.sct = None
+
     def capture_screen(self, region=None):
         """
         截取屏幕

@@ -9,6 +9,7 @@ from PyQt6.QtGui import QIcon, QTextCursor, QColor
 from utils.config_manager import ConfigManager
 from core.bot_logic import FishingBot
 from gui.roi_selector import ROISelector
+from gui.hsv_tuner import HSVTuner
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -20,6 +21,7 @@ class MainWindow(QMainWindow):
         self.cfg = ConfigManager()
         self.bot = FishingBot(self.cfg)
         self.roi_selector = None
+        self.hsv_tuner = None       # 保持 HSV 窗口引用
         self.current_roi_key = None # 标记当前正在设置哪个 ROI
 
         # 2. 构建界面
@@ -68,19 +70,12 @@ class MainWindow(QMainWindow):
         # 按钮区
         btn_layout = QHBoxLayout()
         
-        self.btn_start = QPushButton("启动挂机")
-        self.btn_start.setMinimumHeight(40)
-        self.btn_start.setStyleSheet("background-color: #28a745; color: white; font-weight: bold;")
-        self.btn_start.clicked.connect(self.toggle_bot)
-        
-        self.btn_stop = QPushButton("停止")
-        self.btn_stop.setMinimumHeight(40)
-        self.btn_stop.setStyleSheet("background-color: #dc3545; color: white; font-weight: bold;")
-        self.btn_stop.setEnabled(False)
-        self.btn_stop.clicked.connect(self.stop_bot)
+        self.btn_toggle = QPushButton("启动挂机")
+        self.btn_toggle.setMinimumHeight(40)
+        self.btn_toggle.setStyleSheet("background-color: #28a745; color: white; font-weight: bold;")
+        self.btn_toggle.clicked.connect(self.toggle_bot)
 
-        btn_layout.addWidget(self.btn_start)
-        btn_layout.addWidget(self.btn_stop)
+        btn_layout.addWidget(self.btn_toggle)
         layout.addLayout(btn_layout)
 
     def _init_settings_tab(self):
@@ -105,6 +100,15 @@ class MainWindow(QMainWindow):
         self.btn_set_roi_bite = QPushButton("🎯 设置咬钩检测区域")
         self.btn_set_roi_bite.clicked.connect(lambda: self.open_roi_selector('bite'))
         roi_layout.addWidget(self.btn_set_roi_bite)
+
+        # 3. 提示信息区域 (新增)
+        self.lbl_roi_msg = QLabel("💬 提示信息 (背包/位置): " + str(self.cfg.get('rois', 'msg_tips') or "全屏"))
+        roi_layout.addWidget(self.lbl_roi_msg)
+
+        self.btn_set_roi_msg = QPushButton("🎯 设置提示信息区域")
+        self.btn_set_roi_msg.setToolTip("框选屏幕上会出现【背包已满】或【位置错误】文字的区域")
+        self.btn_set_roi_msg.clicked.connect(lambda: self.open_roi_selector('msg_tips'))
+        roi_layout.addWidget(self.btn_set_roi_msg)
         
         group_roi.setLayout(roi_layout)
         layout.addWidget(group_roi)
@@ -128,6 +132,18 @@ class MainWindow(QMainWindow):
         group_params.setLayout(form_layout)
         layout.addWidget(group_params)
 
+        # --- 颜色校准 ---
+        group_color = QGroupBox("视觉识别校准")
+        color_layout = QVBoxLayout()
+        
+        self.btn_tune_yellow = QPushButton("🎨 校准黄色命中区域")
+        self.btn_tune_yellow.setToolTip("弹出可视化的颜色阈值调节窗口")
+        self.btn_tune_yellow.clicked.connect(lambda: self.open_hsv_tuner('yellow'))
+        color_layout.addWidget(self.btn_tune_yellow)
+        
+        group_color.setLayout(color_layout)
+        layout.addWidget(group_color)
+
         # --- 保存按钮 ---
         self.btn_save = QPushButton("💾 保存配置")
         self.btn_save.clicked.connect(self.save_settings)
@@ -142,6 +158,17 @@ class MainWindow(QMainWindow):
         self.bot.finished.connect(self.on_bot_finished)
 
     # ================= 槽函数 (Slots) =================
+
+    def open_hsv_tuner(self, color_key):
+        """打开颜色调校窗口"""
+        # 检查是否配置了 ROI，因为截图依赖它
+        if not self.cfg.get('rois', 'minigame'):
+            QMessageBox.warning(self, "警告", "请先配置【小游戏区域】，否则无法截取样本图片！")
+            return
+
+        # 创建并显示窗口 (必须保存为成员变量 self.hsv_tuner，否则会被垃圾回收)
+        self.hsv_tuner = HSVTuner(self.cfg, color_key)
+        self.hsv_tuner.show()
 
     def open_roi_selector(self, key):
         """打开 ROI 选择器，并记录当前正在设置的 key"""
@@ -163,6 +190,8 @@ class MainWindow(QMainWindow):
                 self.lbl_roi_minigame.setText(f"🎮 小游戏: {roi} (未保存)")
             elif self.current_roi_key == 'bite':
                 self.lbl_roi_bite.setText(f"🎣 咬钩点: {roi} (未保存)")
+            elif self.current_roi_key == 'msg_tips':
+                self.lbl_roi_msg.setText(f"💬 提示信息: {roi} (未保存)")
                 
             self.append_log(f"[{self.current_roi_key}] 区域已更新，请点击保存。")
 
@@ -179,21 +208,20 @@ class MainWindow(QMainWindow):
         # 刷新 Label 移除 (未保存) 字样
         self.lbl_roi_minigame.setText(f"🎮 小游戏: {self.cfg.get('rois', 'minigame')}")
         self.lbl_roi_bite.setText(f"🎣 咬钩点: {self.cfg.get('rois', 'bite')}")
+        self.lbl_roi_msg.setText(f"💬 提示信息: {self.cfg.get('rois', 'msg_tips')}")
 
     @pyqtSlot()
     def toggle_bot(self):
         if not self.bot.isRunning():
+            # 启动逻辑
             self.bot.start()
-            self.btn_start.setText("暂停挂机") # 逻辑上这里可以是暂停，但为了简单先只做启停
-            self.btn_start.setEnabled(False) # 暂时禁用，防止重复点
-            self.btn_stop.setEnabled(True)
+            self.btn_toggle.setText("停止运行")
+            self.btn_toggle.setStyleSheet("background-color: #dc3545; color: white; font-weight: bold;")
             self.status_label.setText("正在运行...")
-
-    @pyqtSlot()
-    def stop_bot(self):
-        if self.bot.isRunning():
+        else:
+            # 停止逻辑
             self.bot.stop()
-            self.btn_stop.setEnabled(False)
+            self.btn_toggle.setEnabled(False) # 防止重复点击，等待线程结束
             self.status_label.setText("正在停止...")
 
     @pyqtSlot(str)
@@ -210,8 +238,8 @@ class MainWindow(QMainWindow):
 
     @pyqtSlot()
     def on_bot_finished(self):
-        self.btn_start.setText("启动挂机")
-        self.btn_start.setEnabled(True)
-        self.btn_stop.setEnabled(False)
+        self.btn_toggle.setText("启动挂机")
+        self.btn_toggle.setStyleSheet("background-color: #28a745; color: white; font-weight: bold;")
+        self.btn_toggle.setEnabled(True)
         self.status_label.setText("已停止")
         self.append_log("--- 脚本已结束 ---")
