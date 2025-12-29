@@ -13,9 +13,11 @@ class ROISelector(QWidget):
         super().__init__()
         
         # 1. 窗口属性设置
-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.Tool)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint |
+                            Qt.WindowType.WindowStaysOnTopHint |
+                            Qt.WindowType.Tool)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-        
+
         # 2. 设置初始位置和大小
         if default_rect and len(default_rect) == 4:
             self.setGeometry(*default_rect)

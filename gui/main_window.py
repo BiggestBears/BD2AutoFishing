@@ -10,6 +10,7 @@ from utils.config_manager import ConfigManager
 from core.bot_logic import FishingBot
 from gui.roi_selector import ROISelector
 from gui.hsv_tuner import HSVTuner
+from gui.resource_manager import ResourceManager
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -144,6 +145,22 @@ class MainWindow(QMainWindow):
         group_color.setLayout(color_layout)
         layout.addWidget(group_color)
 
+        # --- 资源管理 ---
+        group_resources = QGroupBox("资源文件管理")
+        resource_layout = QVBoxLayout()
+
+        self.btn_replace_templates = QPushButton("📁 替换模板图片")
+        self.btn_replace_templates.setToolTip("选择新的模板图片文件来替换resources/images/templates/中的文件")
+        self.btn_replace_templates.clicked.connect(self.open_template_replacer)
+        resource_layout.addWidget(self.btn_replace_templates)
+
+        self.lbl_resource_info = QLabel("点击上方按钮可替换识别用的模板图片文件")
+        self.lbl_resource_info.setStyleSheet("color: #666666; font-size: 11px;")
+        resource_layout.addWidget(self.lbl_resource_info)
+
+        group_resources.setLayout(resource_layout)
+        layout.addWidget(group_resources)
+
         # --- 保存按钮 ---
         self.btn_save = QPushButton("💾 保存配置")
         self.btn_save.clicked.connect(self.save_settings)
@@ -231,6 +248,16 @@ class MainWindow(QMainWindow):
         cursor = self.log_text.textCursor()
         cursor.movePosition(QTextCursor.MoveOperation.End)
         self.log_text.setTextCursor(cursor)
+
+    def open_template_replacer(self):
+        """打开资源模板替换器"""
+        try:
+            self.resource_manager = ResourceManager(self, self.bot)
+            self.resource_manager.show()
+            self.append_log("📁 打开资源文件管理器")
+        except Exception as e:
+            QMessageBox.critical(self, "错误", f"打开资源管理器失败：\n{e}")
+            self.append_log(f"❌ 打开资源管理器失败: {e}")
 
     @pyqtSlot(str)
     def update_status_label(self, status):
