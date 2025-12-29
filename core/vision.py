@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import mss
 import os
+import sys
 from utils.config_manager import ConfigManager
 
 class Vision:
@@ -14,9 +15,22 @@ class Vision:
         self._load_all_templates()
 
     def _get_image_path(self, filename):
-        """构建图片绝对路径"""
-        base_path = os.getcwd() # 假定在项目根目录运行
-        return os.path.join(base_path, "resources", "images", "templates", filename)
+        """构建图片绝对路径，兼容开发环境和打包后的exe"""
+        if getattr(sys, 'frozen', False):
+            # 如果是打包的exe
+            base_path = sys._MEIPASS
+        else:
+            # 开发环境
+            base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+        resource_path = os.path.join(base_path, "resources", "images", "templates", filename)
+
+        # 如果是打包后的exe，资源可能在exe同目录下
+        if not os.path.exists(resource_path):
+            exe_dir = os.path.dirname(sys.executable) if getattr(sys, 'frozen', False) else base_path
+            resource_path = os.path.join(exe_dir, "resources", "images", "templates", filename)
+
+        return resource_path
 
     def _load_all_templates(self):
         """加载配置中定义的所有图片到内存"""
@@ -40,6 +54,12 @@ class Vision:
                 self.templates[key] = img
             else:
                 print(f"[Vision] 错误: 图片文件不存在 {path}")
+
+    def reload_templates(self):
+        """重新加载所有模板图片 - 用于用户更新资源文件后刷新"""
+        self.templates.clear()
+        self._load_all_templates()
+        print("[Vision] 模板图片已重新加载")
 
     def init_manager(self):
         """在工作线程内初始化 mss 实例"""
